@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  postgres_db:
+    image: postgres:16-alpine
+    container_name: task_tracker_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: dev_user
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_DB: task_tracker_db
+    ports:
+      - "15432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+
+  # --- НОВЫЙ БЛОК БЭКЕНДА ---
+  backend_api:
+    build:
+      context: ./backend      # Указываем папку, где лежит Dockerfile
+      dockerfile: Dockerfile
+    container_name: task_tracker_backend
+    restart: always
+    ports:
+      - "8080:8080"           # Пробрасываем порт 8080 наружу
+    environment:
+      # Переопределяем строку подключения для работы внутри Docker
+      - ConnectionStrings__DefaultConnection=Host=postgres_db;Port=5432;Database=task_tracker_db;Username=dev_user;Password=dev_password
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - postgres_db           # Ждем, пока запустится база данных
+      
+  frontend_app:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: task_tracker_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend_api    
+
+volumes:
+  pgdata:

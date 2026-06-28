@@ -1,0 +1,20 @@
+# Настройки Rider и других IDE
+.idea/
+*.sln.DotSettings.user
+
+# Папки скомпилированного C# бэкенда
+backend/bin/
+backend/obj/
+
+# Зависимости и сборка Next.js фронтенда
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Файлы баз данных (если бы они были локальными)
+*.mdf
+*.ldf
+
+# Системные файлы
+.DS_Store
+Thumbs.db
