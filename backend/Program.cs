@@ -1,38 +1,78 @@
+using System.Text;
 using backend;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- ДОБАВЛЯЕМ ВОТ ЭТОТ БЛОК ---
-// Подключаем EF Core к PostgreSQL, используя строку из appsettings.json
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-// ------------------------------
-
+// 1. Подключаем контроллеры и CORS
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
-            .AllowAnyMethod()
-            .AllowAnyHeader();
+        policy.WithOrigins("http://localhost:3000") // Наш фронтенд в Докере
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials(); // ОБЯЗАТЕЛЬНО для передачи кук!
     });
 });
 
+// 2. Подключаем базу данных
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// 3. НАСТРОЙКА СЕКРЕТНОГО КЛЮЧА JWT (В реальном проде его берут из конфигов)
+var jwtKey = "SuperSecretSecureKey1234567890ValueHere!"; // Минимум 32 символа!
+var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
+
+// 4. НАСТРОЙКА БЕЗОПАСНОЙ АУТЕНТИФИКАЦИИ
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = false, // Для локальной разработки отключаем проверку издателя
+        ValidateAudience = false,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
+        ClockSkew = TimeSpan.Zero
+    };
+
+    // МАГИЯ КУК: Извлекаем JWT-токен прямо из входящих Cookie
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            context.Token = context.Request.Cookies["X-Access-Token"];
+            return Task.CompletedTask;
+        }
+    };
+});
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// ВАЖНО: Порядок middleware имеет критическое значение!
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
 app.UseCors("AllowAll");
-app.UseAuthorization();
+
+app.UseAuthentication(); // 1. Проверяем КТО зашел (Кука -> JWT)
+app.UseAuthorization();  // 2. Проверяем КУДА ему можно
+
 app.MapControllers();
+
 app.Run();

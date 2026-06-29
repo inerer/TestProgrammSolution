@@ -7,7 +7,7 @@ namespace backend.Models;
 public class TaskItem
 
 {
-    [Key] [Column("id")] public int Id { get; set; }
+    [Key] [Column("id")] public Guid Id { get; set; }
 
     [Required] [Column("title")] public string Title { get; set; } = string.Empty;
 
