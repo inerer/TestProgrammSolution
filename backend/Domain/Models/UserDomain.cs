@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace backend.Models
 {
     [Table("users")]
-    public class UserDomain // Имя класса User или UserDomain — на твой вкус, оба ок!
+    public class UserDomain 
     {
         [Key] 
         [Column("id")] 
@@ -14,8 +14,7 @@ namespace backend.Models
         [Required] 
         [Column("email")] 
         public string Email { get; set; } = string.Empty;
-
-        // ИСПРАВЛЕНО: Храним хеш, а не сам пароль, и связываем с правильной колонкой
+        
         [Required] 
         [Column("password_hash")] 
         public string PasswordHash { get; set; } = string.Empty;
