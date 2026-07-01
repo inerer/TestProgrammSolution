@@ -16,4 +16,6 @@ public class TaskItem
     [Column("is_completed")] public bool IsCompleted { get; set; }
 
     [Column("created_at")] public DateTime CreatedAt { get; set; }
+
+    [Required] [Column("user_id")] public Guid UserId { get; set; }
 }
