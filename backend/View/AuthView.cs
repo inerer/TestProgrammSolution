@@ -1,6 +1,6 @@
-namespace backend.DTO;
+namespace backend.View;
 
-public class LogDto
+public class AuthView
 {
     public string Email { get; set; } = string.Empty;
     

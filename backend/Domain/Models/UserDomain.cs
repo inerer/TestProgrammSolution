@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace backend.Models
 {
     [Table("users")]
-    public class UserItem // Имя класса User или UserItem — на твой вкус, оба ок!
+    public class UserDomain // Имя класса User или UserDomain — на твой вкус, оба ок!
     {
         [Key] 
         [Column("id")] 

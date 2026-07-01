@@ -1,8 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using backend.DTO;
 using backend.Models;
+using backend.View;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -23,17 +23,17 @@ namespace backend.Controllers
 
         // 1. ЭНДПОИНТ РЕГИСТРАЦИИ
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterDto dto)
+        public async Task<IActionResult> Register([FromBody] RegisterView view)
         {
-            if (await _context.Users.AnyAsync(u => u.Email == dto.Email.ToLower()))
+            if (await _context.Users.AnyAsync(u => u.Email == view.Email.ToLower()))
                 return BadRequest("Пользователь уже существует.");
 
-            var user = new UserItem
+            var user = new UserDomain
             {
                 Id = Guid.NewGuid(), // Генерируем современный UUID
-                Email = dto.Email.ToLower(),
+                Email = view.Email.ToLower(),
                 // Хешируем пароль с солью через BCrypt! Безопасность топ-уровня.
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(view.Password),
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -44,23 +44,24 @@ namespace backend.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login(LogDto dto)
+        public async Task<IActionResult> Login(AuthView view)
         {
-            var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == dto.Email.ToLower());
-            if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+            var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == view.Email.ToLower());
+            if (user == null || !BCrypt.Net.BCrypt.Verify(view.Password, user.PasswordHash))
                 return Unauthorized("Неверный Емейл или пароль");
-            
+
             var tokenHandler = new JwtSecurityTokenHandler();
-            var jwtKey = "SuperSecretSecureKey1234567890ValueHere!"; 
+            var jwtKey = "SuperSecretSecureKey1234567890ValueHere!";
             var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
-            
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity([
                     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) // Юзер ID (GUID)
                 ]),
                 Expires = DateTime.UtcNow.AddDays(7), // Токен живет неделю
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(keyBytes), SecurityAlgorithms.HmacSha256Signature)
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(keyBytes),
+                    SecurityAlgorithms.HmacSha256Signature)
             };
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
@@ -69,8 +70,8 @@ namespace backend.Controllers
             // УПАКОВЫВАЕМ JWT В КУКУ С ФЛАГОМ httpOnly! JavaScript до нее не доберется!
             var cookieOptions = new CookieOptions
             {
-                HttpOnly = true,   // Защита от XSS атак
-                Secure = false,    // Ставим true на настоящем сервере с HTTPS (для локалхоста пока false)
+                HttpOnly = true, // Защита от XSS атак
+                Secure = false, // Ставим true на настоящем сервере с HTTPS (для локалхоста пока false)
                 SameSite = SameSiteMode.Lax, // Защита от CSRF атак
                 Expires = DateTime.UtcNow.AddDays(7)
             };
@@ -79,7 +80,7 @@ namespace backend.Controllers
 
             return Ok(new { message = "Вход выполнен успешно!", email = user.Email });
         }
-        
+
         [HttpPost("logout")]
         public IActionResult Logout()
         {

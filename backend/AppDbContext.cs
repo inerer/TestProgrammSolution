@@ -9,6 +9,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     // Это свойство представляет нашу таблицу tasks в базе данных.
     // Через него мы будем делать все LINQ-запросы (например, _context.Tasks.ToList())
-    public DbSet<TaskItem> Tasks { get; set; }
-    public DbSet<UserItem> Users { get; set; }
+    public DbSet<TaskDomain> Tasks { get; set; }
+    public DbSet<UserDomain> Users { get; set; }
 }

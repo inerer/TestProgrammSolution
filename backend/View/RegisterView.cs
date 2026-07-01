@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace backend.DTO;
+namespace backend.View;
 
-public class RegisterDto
+public class RegisterView
 {
     public string Email { get; set; } = string.Empty;
     

@@ -16,7 +16,7 @@ public class TasksController(AppDbContext context) : ControllerBase
     private Guid CurrentUserId => Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<TaskItem>>> GetTasks()
+    public async Task<ActionResult<IEnumerable<TaskDomain>>> GetTasks()
     {
         var tasks = await _context.Tasks.Where(t => t.UserId == CurrentUserId).ToListAsync();
 
@@ -24,7 +24,7 @@ public class TasksController(AppDbContext context) : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<TaskItem>> GetTask(int id)
+    public async Task<ActionResult<TaskDomain>> GetTask(int id)
     {
         var task = await _context.Tasks.FindAsync(id);
         if (task == null) return NotFound(new { message = "Task Not Found" });
@@ -33,7 +33,7 @@ public class TasksController(AppDbContext context) : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<TaskItem>> CreateItem([FromBody] TaskItem task)
+    public async Task<ActionResult<TaskDomain>> CreateItem([FromBody] TaskDomain task)
     {
         task.Id = Guid.NewGuid(); // Генерируем UUID задачи
         task.UserId = CurrentUserId; // Намертво привязываем задачу к текущему юзеру!
