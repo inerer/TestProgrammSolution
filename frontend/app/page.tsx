@@ -1,6 +1,7 @@
 "use client"
 
 import {useEffect, useState} from "react";
+import AuthForm from "../components/AuthForm";
 
 interface Task {
     id: number;
@@ -10,25 +11,42 @@ interface Task {
 }
 
 export default function Home() {
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [newTaskTitle, setNewTaskTitle] = useState("");
 
     const fetchTasks = async () => {
         try {
-            const response = await fetch("http://localhost:8080/api/tasks");
+            const response = await fetch("http://localhost:8080/api/tasks", {
+                credentials: "include",
+            });
             if (response.ok) {
                 const data = await response.json();
                 setTasks(data);
+            } else if (response.status === 401) {
+                setIsAuthenticated(false);
             }
         } catch (error) {
             console.log("ошибка при получении данных", error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
     useEffect(() => {
+        if (isAuthenticated) {
+            fetchTasks();
+        }
+    }, [isAuthenticated]);
 
-        fetchTasks();
-    }, []);
+    if (!isAuthenticated) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+                <AuthForm onLoginSuccess={() => setIsAuthenticated(true)}/>
+            </div>
+        )
+    }
 
     const addTask = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -63,50 +81,38 @@ export default function Home() {
     };
 
     return (
-        <main className="min-h-screen bg-gray-100 p-8 text-gray-900">
-            <div className="max-w-xl mx-auto bg-white rounded-xl shadow-md p-6">
-                <h1 className="text-2xl font-bold text-center mb-6 text-blue-600">Задачи</h1>
-                <form onSubmit={addTask} className="flex gap-2 mb-6">
-                    <input
-                        type="text"
-                        value={newTaskTitle}
-                        onChange={(e) => setNewTaskTitle(e.target.value)}
-                        placeholder="Что нужно сделать?"
-                        className="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-                    />
+        <div className="min-h-screen bg-gray-100 p-8">
+            <div className="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-md">
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-2xl font-bold text-gray-800">Мои задачи</h1>
                     <button
-                        type="submit"
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                        onClick={() => setIsAuthenticated(false)}
+                        className="text-sm text-red-500 hover:underline"
                     >
-                        Добавить
+                        Выйти
                     </button>
-                </form>
-                <ul className="space-y-3">
-                    {tasks.length === 0 ? (
-                        <p className={"text-center text-gray-500"}> Задач нет!</p>) : (
-                        tasks.map((task) => (
-                            <li key={task.id}
-                                className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-100">
-                                <div className="flex items-center gap-3">
-                                    <input type="checkbox"
-                                           checked={task.isComplete}
-                                           onChange={() => toggleTask(task.id, task.isComplete)}
-                                           className="w-5 h-5 cursor-pointer accent-blue-600"/>
-                                    <span
-                                        className={`${task.isComplete ? "line-through text-gray-400" : "text-gray-800"}`}>
-                                        {task.title}
-                                    </span>
+                </div>
+
+                {isLoading ? (
+                    <p className="text-center text-gray-500">Загрузка задач...</p>
+                ) : tasks.length === 0 ? (
+                    <p className="text-center text-gray-500">У вас пока нет задач. Создайте первую!</p>
+                ) : (
+                    <ul className="space-y-3">
+                        {tasks.map((task) => (
+                            <li key={task.id} className="p-4 border border-gray-200 rounded flex justify-between">
+                                <div>
+                                    <h3 className="font-semibold">{task.title}</h3>
+                                    <p className="text-sm text-gray-600">{task.description}</p>
                                 </div>
-                                <button onClick={() => deleteTask(task.id)}
-                                        className="text-red-500 hover:text-red-700 font-medium px-2 py-1">
-                                    Удалить
-                                </button>
+                                <div>
+                                    {task.isComplete ? "✅" : "⏳"}
+                                </div>
                             </li>
-                        ))
-                    )
-                    }
-                </ul>
+                        ))}
+                    </ul>
+                )}
             </div>
-        </main>
+        </div>
     );
 }

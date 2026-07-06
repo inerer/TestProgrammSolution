@@ -12,7 +12,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("http://localhost:3000") // Наш фронтенд в Докере
+        policy.WithOrigins("http://localhost:3000", "http://localhost:3001") // Наш фронтенд в Докере
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials(); // ОБЯЗАТЕЛЬНО для передачи кук!
