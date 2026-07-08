@@ -16,7 +16,7 @@ namespace backend.Models
         public string Email { get; set; } = string.Empty;
         
         [Required] 
-        [Column("password_has")] 
+        [Column("password_hast")] 
         public string PasswordHash { get; set; } = string.Empty;
 
         [Column("created_at")] 
