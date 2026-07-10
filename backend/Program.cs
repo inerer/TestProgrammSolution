@@ -13,9 +13,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll", policy =>
     {
         policy.WithOrigins("http://localhost:3000", "http://localhost:3001") // Наш фронтенд в Докере
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials(); // ОБЯЗАТЕЛЬНО для передачи кук!
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials(); // ОБЯЗАТЕЛЬНО для передачи кук!
     });
 });
 
@@ -29,32 +29,32 @@ var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
 
 // 4. НАСТРОЙКА БЕЗОПАСНОЙ АУТЕНТИФИКАЦИИ
 builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
     {
-        ValidateIssuer = false, // Для локальной разработки отключаем проверку издателя
-        ValidateAudience = false,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
-        ClockSkew = TimeSpan.Zero
-    };
-
-    // МАГИЯ КУК: Извлекаем JWT-токен прямо из входящих Cookie
-    options.Events = new JwtBearerEvents
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
     {
-        OnMessageReceived = context =>
+        options.TokenValidationParameters = new TokenValidationParameters
         {
-            context.Token = context.Request.Cookies["X-Access-Token"];
-            return Task.CompletedTask;
-        }
-    };
-});
+            ValidateIssuer = false, // Для локальной разработки отключаем проверку издателя
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
+            ClockSkew = TimeSpan.Zero
+        };
+
+        // МАГИЯ КУК: Извлекаем JWT-токен прямо из входящих Cookie
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                context.Token = context.Request.Cookies["X-Access-Token"];
+                return Task.CompletedTask;
+            }
+        };
+    });
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -71,7 +71,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowAll");
 
 app.UseAuthentication(); // 1. Проверяем КТО зашел (Кука -> JWT)
-app.UseAuthorization();  // 2. Проверяем КУДА ему можно
+app.UseAuthorization(); // 2. Проверяем КУДА ему можно
 
 app.MapControllers();
 

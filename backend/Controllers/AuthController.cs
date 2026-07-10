@@ -30,9 +30,8 @@ namespace backend.Controllers
 
             var user = new UserDomain
             {
-                Id = Guid.NewGuid(), // Генерируем современный UUID
+                Id = Guid.NewGuid(),
                 Email = view.Email.ToLower(),
-                // Хешируем пароль с солью через BCrypt! Безопасность топ-уровня.
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(view.Password),
                 CreatedAt = DateTime.UtcNow
             };
