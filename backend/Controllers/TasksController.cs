@@ -24,9 +24,9 @@ public class TasksController(AppDbContext context) : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<TaskDomain>> GetTask(int id)
+    public async Task<ActionResult<TaskDomain>> GetTask(Guid id)
     {
-        var task = await _context.Tasks.FindAsync(id);
+        var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == id && t.UserId == CurrentUserId);
         if (task == null) return NotFound(new { message = "Task Not Found" });
 
         return Ok(task);
@@ -45,12 +45,14 @@ public class TasksController(AppDbContext context) : ControllerBase
     }
 
     [HttpPut("{id}/toggle")]
-    public async Task<IActionResult> ToggleTaskStatus(Guid id, [FromBody] bool isCompleted)
+    public async Task<IActionResult> ToggleTaskStatus(Guid id, [FromBody] TaskDomain updatedTask)
     {
         var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == id && t.UserId == CurrentUserId);
         if (task == null) return NotFound(new { message = "Task Not Found" });
 
-        task.IsCompleted = isCompleted;
+        task.Title = updatedTask.Title;
+        task.Description = updatedTask.Description;
+        task.IsCompleted = updatedTask.IsCompleted;
 
         await _context.SaveChangesAsync();
 

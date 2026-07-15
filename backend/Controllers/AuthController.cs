@@ -10,15 +10,19 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace backend.Controllers
 {
+    
     [ApiController]
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
+        
         private readonly AppDbContext _context;
+        private readonly IConfiguration _configuration;
 
-        public AuthController(AppDbContext context)
+        public AuthController(AppDbContext context, IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
         }
 
         // 1. ЭНДПОИНТ РЕГИСТРАЦИИ
@@ -45,12 +49,14 @@ namespace backend.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(AuthView view)
         {
+            
             var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == view.Email.ToLower());
             if (user == null || !BCrypt.Net.BCrypt.Verify(view.Password, user.PasswordHash))
                 return Unauthorized("Неверный Емейл или пароль");
 
             var tokenHandler = new JwtSecurityTokenHandler();
-            var jwtKey = "SuperSecretSecureKey1234567890ValueHere!";
+            var jwtKey = _configuration["Jwt:Key"]  // или _configuration["Jwt:Key"] в контроллере
+                         ?? throw new InvalidOperationException("Jwt:Key не задан в конфигурации");
             var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
 
             var tokenDescriptor = new SecurityTokenDescriptor

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Подключаем контроллеры и CORS
@@ -24,7 +25,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // 3. НАСТРОЙКА СЕКРЕТНОГО КЛЮЧА JWT (В реальном проде его берут из конфигов)
-var jwtKey = "SuperSecretSecureKey1234567890ValueHere!"; // Минимум 32 символа!
+var jwtKey = builder.Configuration["Jwt:Key"]  // или _configuration["Jwt:Key"] в контроллере
+             ?? throw new InvalidOperationException("Jwt:Key не задан в конфигурации");
 var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
 
 // 4. НАСТРОЙКА БЕЗОПАСНОЙ АУТЕНТИФИКАЦИИ
@@ -60,6 +62,12 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureCreated();
+}
 
 // ВАЖНО: Порядок middleware имеет критическое значение!
 if (app.Environment.IsDevelopment())
